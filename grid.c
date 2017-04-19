@@ -198,7 +198,7 @@ int main(int argc, char** argv)
 
   		if(distance == FAILURE_VALUE)
   		{
-  			Neighbor n = NearestNeighbor(queryPoints[i], myChunkStart, myChunkEnd);
+  			Neighbor n = NearestNeighborExhaustive(queryPoints[i], myChunkStart, myChunkEnd);
   			*minDistance = n->distance;
   			MPI_AllReduce(minDistance, minDistance, 1, MPI_FLOAT, MPI_MIN);
 
