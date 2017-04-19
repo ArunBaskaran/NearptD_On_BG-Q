@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<mpi.h>
-
+#include <math.h>
 // nx, ny, and nz are the nodes of the grid 
 
 #define NX 10
@@ -11,6 +11,10 @@
 #define dy 0.1
 #define dz 0.1
 #define FAILURE_VALUE = -1;
+
+
+//Function declarations
+double distance(struct Point_3D point1, struct Point_3D point2)
 
 // A data structure to define cells that together form the grid.
 
@@ -92,6 +96,8 @@ void home_cell(int id)
 	}
 }
 
+
+=======
 //TODO add nearest neighbor logic (3d modular arithmetic.)
 int NearestNeighbor(int index)
 {
@@ -233,4 +239,14 @@ int main(int argc, char** argv)
 
 }
 
+  //Added by Sidharth
+double distance(struct Point_3D point1, struct Point_3D point2){
+
+	double distance=0.0;
+
+	distance= sqrt((point2.x-point1.x)^2 + (point2.y-point1.y)^2 + (point2.z-point1.z)^2 );
+
+
+	return distance;
+}
 		
