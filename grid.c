@@ -162,6 +162,8 @@ int main(int argc, char** argv)
 	FILE *queyrFile = fopen(queryFileName, "r");
 	FILE *outFile = fopen(outFileName, "w");
 
+// Close the files
+
     point = malloc(sizeof(point3D) * numPoints);
 	for(i = 0; i < numPoints; i++)
   	{
@@ -181,6 +183,7 @@ int main(int argc, char** argv)
   	for(int i = myChunkStart; i < myChunkStart + chunkSize; i++)
   	{
   		home_cell(i);
+	}
 
 	int* queryPoints = malloc(sizeof(int) * numQueryPoints);
 	for(i = 0; i < numPoints; i++)
@@ -191,7 +194,7 @@ int main(int argc, char** argv)
   	}
   	for(int i = 0; i < numQueryPoints; i++) //for every query point (basic version 2 search modes.)
   	{
-  		Neighbor n = NearestNeighbor(queryPoints[i]);
+  		Neighbor n = NearestNeighbor(queryPoints[i]);  //to-do 
   		float* minDistance;
   		*minDistance = n->distance;
   		MPI_AllReduce(minDistance, minDistance, 1, MPI_FLOAT, MPI_MIN);
