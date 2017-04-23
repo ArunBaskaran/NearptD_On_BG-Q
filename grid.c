@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<mpi.h>
-
+#include <math.h>
 // nx, ny, and nz are the nodes of the grid 
 
 #define NX 10
@@ -11,6 +11,10 @@
 #define dy 0.1
 #define dz 0.1
 #define FAILURE_VALUE = -1;
+float queryX, queryY;
+
+//Function declarations
+double distance(struct Point_3D point1, struct Point_3D point2)
 
 // A data structure to define cells that together form the grid.
 
@@ -63,6 +67,18 @@ for(i = 0 ; i < NX ; i++)
 	}
 }
 
+//Function to read from query input file. Stores in queryX, queryY
+//Only rank = 0 reads this
+//Input file should be space separated in input/input.txt
+void readQueryFile(){
+	if (myRank == 0){
+		FILE *fp;
+		fp = fopen("input/input.txt","r");
+		fscanf(fp,"%f",&queryX);
+		fscanf(fp,"%f",&queryY);
+	}
+}
+
 //A function that identifies a point's cell, and updates the point's id to the cell's list of points. 
 void home_cell(int id)
 { 
@@ -92,6 +108,8 @@ void home_cell(int id)
 	}
 }
 
+
+=======
 //TODO add nearest neighbor logic (3d modular arithmetic.)
 int NearestNeighbor(int index)
 {
@@ -236,4 +254,14 @@ int main(int argc, char** argv)
 
 }
 
+  //Added by Sidharth
+double distance(struct Point_3D point1, struct Point_3D point2){
+
+	double distance=0.0;
+
+	distance= sqrt((point2.x-point1.x)^2 + (point2.y-point1.y)^2 + (point2.z-point1.z)^2 );
+
+
+	return distance;
+}
 		
