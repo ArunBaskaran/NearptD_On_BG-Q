@@ -119,8 +119,8 @@ struct Neighbor NearestNeighbor(int index)
 {
 	//struct Neighbor n = malloc(sizeof(Neighbor));
 	struct Neighbor n ;
-	n.id = FAILURE_VALUE;
-	n.distance = FAILURE_VALUE;
+	n.id = 1 ;
+	n.distance = 1.0 ;
 	return n;
 }
 
@@ -181,18 +181,17 @@ int main(int argc, char** argv)
 
 	cells = malloc((NX*NY*NZ) * sizeof(struct Cell)) ;
 	allPoints = malloc(numPoints * sizeof(struct Point_3D)) ;
-    //Point_3D inputQueryPoints[numQueryPoints] ;
     
-    MPI_Init( &argc, &argv);
-    MPI_Comm_size(MPI_COMM_WORLD, &mpi_commsize);
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_myrank);
+        MPI_Init( &argc, &argv);
+        MPI_Comm_size(MPI_COMM_WORLD, &mpi_commsize);
+        MPI_Comm_rank(MPI_COMM_WORLD, &mpi_myrank);
 
-    double startTime;
-    double endTime;
-    if(mpi_myrank == 0)
-    {
-    	startTime = MPI_Wtime(); //rank 0 is the timekeeper.
-    }
+        double startTime;
+        double endTime;
+        if(mpi_myrank == 0)
+        {
+    		startTime = MPI_Wtime(); //rank 0 is the timekeeper.
+        }
 	
 	FILE *inFile = fopen(inFileName, "r");
 	FILE *queryFile = fopen(queryFileName, "r");
@@ -216,36 +215,40 @@ int main(int argc, char** argv)
   	int myChunkStart = mpi_myrank * chunkSize;
   	int myChunkEnd = (mpi_myrank+1) * chunkSize ;
 
-  	//place my points on my grid.
+ 	//place my points on my grid.
   	for(int i = myChunkStart; i < myChunkStart + chunkSize; i++)
   	{
   		home_cell(i);
 	}
 
+
+
 	int* queryPoints = malloc(sizeof(int) * numQueryPoints);
-	for(i = 0; i < numPoints; i++)
+	for(i = 0; i < numQueryPoints; i++)
   	{
   		int index;
   		fscanf(inFile, "%d", &index);
   		queryPoints[i] = index;
   	}
+
+
   	for(int i = 0; i < numQueryPoints; i++) //for every query point (basic version 2 search modes.)
   	{
   		struct Neighbor n = NearestNeighbor(queryPoints[i]);  //to-do 
-  		float* minDistance;
-  		*minDistance = n.distance;
-  		MPI_Allreduce(minDistance, minDistance, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
+  		float minDistance;
+  		minDistance = n.distance;
+  		MPI_Allreduce(&minDistance, &minDistance, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
 
-  		if(n.distance == FAILURE_VALUE)
+  		if(n.distance == (float)FAILURE_VALUE)
   		{
   			struct Neighbor n = NearestNeighborExhaustive(queryPoints[i], myChunkStart, myChunkEnd);
-  			*minDistance = n.distance;
-  			MPI_Allreduce(minDistance, minDistance, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
+  			minDistance = n.distance;
+  			MPI_Allreduce(&minDistance, &minDistance, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
 
-  			if(*minDistance == n.distance)
+  			if(minDistance == n.distance)
   			{
   				//TODO we need some kind of locking for ties.
-  				if(n.distance == FAILURE_VALUE)
+  				if(n.distance == (float)FAILURE_VALUE)
   				{
   					if(mpi_myrank == 0)
   					{
@@ -259,6 +262,7 @@ int main(int argc, char** argv)
   			}
   		}
   	}
+
 	if(mpi_myrank == 0)
     {
     	endTime = MPI_Wtime();
