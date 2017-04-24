@@ -47,16 +47,29 @@ int mpi_myrank;
 int mpi_commsize;
 int cell_max = NX * NY * NZ ;
 int numPoints ;
+int numPoints_rank ;
+int myChunkStart ;
+int myChunkEnd ;
+int numQueryPoints ;
 struct Point_3D * allPoints ;
 struct Cell * cells ;
 
+
+MPI_File fh_input ;
+MPI_File fh_query ;
+MPI_File fh_output ;
+
+char* inFileName ;
+char* queryFileName ;
+char* outFileName ;
+
 void grid_init()
 {
-	for(i = 0 ; i < NX ; i++)
+	for(i = mpi_myrank*(NX/mpi_commsize) ; i < (mpi_myrank+1)*(NX/mpi_commsize) ; i++)
 	{
-		for(j = 0 ; j < NY ; j++)
+		for(j = mpi_myrank*(NY/mpi_commsize) ; j < (mpi_myrank+1)*(NY/mpi_commsize) ; j++)
 		{
-			for(k = 0 ; k < NZ ; k++)
+			for(k = mpi_myrank*(NZ/mpi_commsize) ; k < (mpi_myrank+1)*(NZ/mpi_commsize); k++)
 			{
 				cells[cell_flag].xbegin = i ;
 				cells[cell_flag].xend = i+1 ;
@@ -70,18 +83,25 @@ void grid_init()
 	}
 }
 
-//Function to read from query input file. Stores in queryX, queryY
-//Only rank = 0 reads this
-//Input file should be space separated in input/input.txt
-void readQueryFile()
+void readInputFile()
 {
-	if (mpi_myrank == 0)
-	{
-		FILE *fp;
-		fp = fopen("input/input.txt","r");
-		fscanf(fp,"%f",&queryX);
-		fscanf(fp,"%f",&queryY);
-	}
+	MPI_Offset offset = (int)sizeof(double)*mpi_myrank*numPoints_rank*3 ;
+	double x,y,z; 
+	for(i = 0; i < numPoints_rank; i++)
+  	{
+		offset += (int)sizeof(double)*i*3  ;
+		MPI_File_read_at_all(fh_input , offset , &x , 1 , MPI_FLOAT , MPI_STATUS_IGNORE);
+		MPI_File_read_at_all(fh_input , offset , &y , 1 , MPI_FLOAT , MPI_STATUS_IGNORE);
+		MPI_File_read_at_all(fh_input , offset , &z , 1 , MPI_FLOAT , MPI_STATUS_IGNORE);		
+  		//fscanf(inFile, "%f", &x);
+  		//fscanf(inFile, "%f", &y);
+  		//fscanf(inFile, "%f", &z);
+
+		//Mutex lock ??
+  		allPoints[mpi_myrank*numPoints_rank + i].x = x;
+  		allPoints[mpi_myrank*numPoints_rank + i].y = y;
+  		allPoints[mpi_myrank*numPoints_rank + i].z = z;        
+  	}
 }
 
 //A function that identifies a point's cell, and updates the point's id to the cell's list of points. 
@@ -93,23 +113,48 @@ void home_cell(int id)
 	double z1 = allPoints[id].z ;
 	for(int i = 0 ; i < cell_max ; i++)
 	{
-		if((x1>cells[i].xbegin) & (x1<cells[i].xend) & (y1>cells[i].ybegin) & (y1<cells[i].yend) & (z1>cells[i].zbegin) & (z1<cells[i].zend))
+		if((x1>(double)cells[i].xbegin) & (x1<(double)cells[i].xend) & (y1>(double)cells[i].ybegin) & (y1<(double)cells[i].yend) & (z1>(double)cells[i].zbegin) & (z1<(double)cells[i].zend))
 		{
 			if(cells[i].p_flag==0)
 			{
-				cells[i].p_ids = realloc(cells[i].p_ids, 1*sizeof(int)) ;
+				cells[i].p_ids = malloc(1*sizeof(struct Cell)) ;
 				cells[i].p_ids[cells[i].p_flag] = id ;
-				cells[i].p_flag++ ;
-				exit(0) ;
+				cells[i].p_flag ++ ;
+				//exit(0) ;
 			}
 			else
 			{		
-				cells[i].p_ids = realloc(cells[i].p_ids, 1*sizeof(int)) ;
+				cells[i].p_ids = realloc(cells[i].p_ids, 1*sizeof(struct Cell)) ;
 				cells[i].p_ids[cells[i].p_flag] = id ;
-				cells[i].p_flag++ ;
-				exit(0) ;
+				//cells[i].p_flag = cells[i].p_flag + 1 ;
+				//exit(0) ;
 			}
 		}
+	}
+}
+
+void assignPointsToCells()
+{
+  	myChunkStart = mpi_myrank * numPoints_rank ;
+  	myChunkEnd = (mpi_myrank+1) * numPoints_rank ;
+
+  	for(int i = mpi_myrank * numPoints_rank ; i < (mpi_myrank+1) * numPoints_rank ; i++)
+  	{
+  		home_cell(i);
+	}
+}	
+
+//Function to read from query input file. Stores in queryX, queryY
+//Only rank = 0 reads this
+//Input file should be space separated in input/input.txt
+void readQueryFile()
+{
+	if (mpi_myrank == 0)
+	{
+		FILE *fp;
+		fp = fopen("input/input.txt","r");
+		fscanf(fp,"%f",&queryX);
+		fscanf(fp,"%f",&queryY);
 	}
 }
 
@@ -165,26 +210,39 @@ struct Neighbor NearestNeighborExhaustive(int index, int myChunkStart, int myChu
 //5: outFile.txt
 int main(int argc, char** argv)
 {
+	MPI_Comm file_comm ;
 	Lx = dx * NX ;
 	Ly = dy * NY ;
 	Lz = dz * NZ ;
 	cell_flag = 0 ;
+
 	if(argc < 6)
 	{
 		perror("Missing arguments. Exepects 1) inputFile.txt ") ;
 	}
 	numPoints = atoi(argv[1]);
-	char* inFileName = argv[2];
-	int numQueryPoints = atoi(argv[3]);
-	char* queryFileName = argv[4];
-	char* outFileName = argv[5];
+	inFileName = argv[2];
+	numQueryPoints = atoi(argv[3]);
+	queryFileName = argv[4];
+	outFileName = argv[5];
+
+        //MPI_File_open(file_comm,inFileName, MPI_MODE_CREATE | MPI_MODE_RDONLY, MPI_INFO_NULL, &fh_input);
 
 	cells = malloc((NX*NY*NZ) * sizeof(struct Cell)) ;
 	allPoints = malloc(numPoints * sizeof(struct Point_3D)) ;
+
     
         MPI_Init( &argc, &argv);
         MPI_Comm_size(MPI_COMM_WORLD, &mpi_commsize);
         MPI_Comm_rank(MPI_COMM_WORLD, &mpi_myrank);
+
+	numPoints_rank = numPoints/mpi_commsize ;
+	grid_init() ;
+	for(int i = 0 ; i < cell_max ; i++)
+	{
+		cells[i].p_flag = 0 ;
+	}
+
 
         double startTime;
         double endTime;
@@ -192,34 +250,18 @@ int main(int argc, char** argv)
         {
     		startTime = MPI_Wtime(); //rank 0 is the timekeeper.
         }
+
+	readInputFile() ;
+	assignPointsToCells() ;
 	
-	FILE *inFile = fopen(inFileName, "r");
+//	FILE *inFile = fopen(inFileName, "r");
 	FILE *queryFile = fopen(queryFileName, "r");
 	FILE *outFile = fopen(outFileName, "w");
 
-// Close the files
 
         //point = malloc(sizeof(point3D) * numPoints);
-	for(i = 0; i < numPoints; i++)
-  	{
-  		float x,y,z;
-  		fscanf(inFile, "%f", &x);
-  		fscanf(inFile, "%f", &y);
-  		fscanf(inFile, "%f", &z);
-  		allPoints[i].x = x;
-  		allPoints[i].y = y;
-  		allPoints[i].z = z;        //allPoints definition
-  	}
 
-  	int chunkSize = (numPoints / mpi_commsize);
-  	int myChunkStart = mpi_myrank * chunkSize;
-  	int myChunkEnd = (mpi_myrank+1) * chunkSize ;
-
- 	//place my points on my grid.
-  	for(int i = myChunkStart; i < myChunkStart + chunkSize; i++)
-  	{
-  		home_cell(i);
-	}
+  	//int chunkSize = (numPoints / mpi_commsize);
 
 
 
@@ -227,7 +269,7 @@ int main(int argc, char** argv)
 	for(i = 0; i < numQueryPoints; i++)
   	{
   		int index;
-  		fscanf(inFile, "%d", &index);
+  		fscanf(queryFile, "%d", &index);
   		queryPoints[i] = index;
   	}
 
@@ -270,12 +312,19 @@ int main(int argc, char** argv)
     	printf("Total elapsed time was %lf\n", totalTime);
     } 
 
+
+	MPI_File_close(&fh_input) ;
+	MPI_File_close(&fh_query) ;
+	MPI_File_close(&fh_output) ;
+	free(cells) ;
+	free(allPoints) ;
+
   	MPI_Finalize();
 
-
-
-
 }
+
+
+
 
   //Added by Sidharth
 
