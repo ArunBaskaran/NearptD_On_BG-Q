@@ -2,15 +2,16 @@
 #include<stdlib.h>
 #include<mpi.h>
 #include <math.h>
+//#include<pthreads.h>
 // nx, ny, and nz are the nodes of the grid 
 
 #define NX 10
 #define NY 10
 #define NZ 10
-#define dx 0.1
-#define dy 0.1
-#define dz 0.1
-#define FAILURE_VALUE -1.0
+#define dx -1.0
+#define dy -1.0
+#define dz -1.0
+#define FAILURE_VALUE 0.0
 float queryX, queryY;
 
 // A data structure to define cells that together form the grid.
@@ -51,6 +52,7 @@ int numPoints_rank ;
 int myChunkStart ;
 int myChunkEnd ;
 int numQueryPoints ;
+int points_in_cell[NX * NY * NZ] ;
 struct Point_3D * allPoints ;
 struct Cell * cells ;
 
@@ -65,18 +67,20 @@ char* outFileName ;
 
 void grid_init()
 {
+	cell_flag = mpi_myrank * (cell_max/mpi_commsize) ; 
 	for(i = mpi_myrank*(NX/mpi_commsize) ; i < (mpi_myrank+1)*(NX/mpi_commsize) ; i++)
 	{
 		for(j = mpi_myrank*(NY/mpi_commsize) ; j < (mpi_myrank+1)*(NY/mpi_commsize) ; j++)
 		{
 			for(k = mpi_myrank*(NZ/mpi_commsize) ; k < (mpi_myrank+1)*(NZ/mpi_commsize); k++)
 			{
-				cells[cell_flag].xbegin = i ;
-				cells[cell_flag].xend = i+1 ;
-				cells[cell_flag].ybegin = j ;
-				cells[cell_flag].yend = j+1 ;
-				cells[cell_flag].zbegin = k ;
-				cells[cell_flag].zend = k+1 ;
+				cells[cell_flag].xbegin = i*dx ;
+				cells[cell_flag].xend = (i+1)*dx ;
+				cells[cell_flag].ybegin = j*dy ;
+				cells[cell_flag].yend = (j+1)*dy ;
+				cells[cell_flag].zbegin = k*dz ;
+				cells[cell_flag].zend = (k+1)*dz ;
+				cells[cell_flag].p_ids = malloc(1*sizeof(struct Cell)) ;
 				cell_flag++ ;
 			}
 		}
@@ -117,21 +121,36 @@ void home_cell(int id)
 		{
 			if(cells[i].p_flag==0)
 			{
-				cells[i].p_ids = malloc(1*sizeof(struct Cell)) ;
-				cells[i].p_ids[cells[i].p_flag] = id ;
-				cells[i].p_flag ++ ;
+				//cells[i].p_ids = malloc(1*sizeof(struct Cell)) ;
+				cells[i].p_ids[0] = id ;
+				points_in_cell[i] = 1 ;
 				//exit(0) ;
 			}
 			else
 			{		
 				cells[i].p_ids = realloc(cells[i].p_ids, 1*sizeof(struct Cell)) ;
-				cells[i].p_ids[cells[i].p_flag] = id ;
-				//cells[i].p_flag = cells[i].p_flag + 1 ;
+				cells[i].p_ids[points_in_cell[i]] = id ;
+				points_in_cell[i]++ ;
 				//exit(0) ;
 			}
 		}
 	}
 }
+
+int get_cell(int id)
+{
+	double x1 = allPoints[id].x ;
+	double y1 = allPoints[id].y ;
+	double z1 = allPoints[id].z ;
+	for(int i = 0 ; i < cell_max ; i++)
+	{
+		if((x1>(double)cells[i].xbegin) & (x1<(double)cells[i].xend) & (y1>(double)cells[i].ybegin) & (y1<(double)cells[i].yend) & (z1>(double)cells[i].zbegin) & (z1<(double)cells[i].zend))
+		{
+			return i ;
+		}
+	}
+}
+
 
 void assignPointsToCells()
 {
@@ -159,17 +178,8 @@ void readQueryFile()
 }
 
 
-//TODO add nearest neighbor logic (3d modular arithmetic.)
-struct Neighbor NearestNeighbor(int index)
+double distance(struct Point_3D point1, struct Point_3D point2)
 {
-	//struct Neighbor n = malloc(sizeof(Neighbor));
-	struct Neighbor n ;
-	n.id = 1 ;
-	n.distance = 1.0 ;
-	return n;
-}
-
-double distance(struct Point_3D point1, struct Point_3D point2){
 
 	double distance=0.0;
 
@@ -178,6 +188,75 @@ double distance(struct Point_3D point1, struct Point_3D point2){
 
 	return distance;
 }
+
+//TODO add nearest neighbor logic (3d modular arithmetic.)
+
+//Assuming that index is the index of the query point
+
+struct Neighbor NearestNeighbor(int index)
+{
+	//struct Neighbor n = malloc(sizeof(Neighbor));
+	double min_distance = 100000 ;
+	int home_cell_id = get_cell(index) ;
+	int index_new, neighbor_id ;
+	int success_flag = 0 ;
+	double temp_distance = 100000 ;
+	for(int i = -1 ; i<=1 ; i++)
+	{
+		for(int j = -1 ; j <= 1 ; j++)
+		{
+			for(int k = -1 ; k <= 1 ; k++)
+			{
+				if(i==0 & j==0 & k==0)
+					{continue ; }
+				else
+				{ 
+					index_new = index + i + j*NY + k*(NX*NY) ; 
+					if((index_new >= 0) & (index_new < cell_max))
+					{ 
+						int temp = 0;
+						while(temp <= points_in_cell[index_new])
+						{					
+
+							if(points_in_cell[index_new]>0)
+							{    
+								int temp_id = cells[index_new].p_ids[temp] ;
+							
+								temp_distance = distance(allPoints[index], allPoints[temp_id]) ;
+								if(temp_distance < min_distance)
+								{
+									min_distance = temp_distance ;
+									neighbor_id = cells[i].p_ids[temp] ;
+									success_flag++ ;
+								}
+							}
+							temp++ ; 
+						}
+					}
+				}
+
+			}
+		}
+	}
+
+
+
+	// Neighboring cells are : index+1, index+1-(NX*NY), index+1+(NX*NY), index+1+NY, index+1-NY, index+1-NY-(NX*NY), index+1-NY+(NX*NY), index+1+NY-(NX*NY), index+1+NY-(NX*NY),///// index-1, index-1-(NX*NY), index-1+(NX*NY), index-1+NY, index-1-NY, index-1-NY-(NX*NY), index-1-NY+(NX*NY), index-1+NY-(NX*NY), index-1+NY-(NX*NY), index+NY, index-NY, index + (NX * NY) , index - (NX * NY) //// index-NY-(NX*NY), index-NY+(NX*NY), index+NY-(NX*NY), index+NY-(NX*NY)   (26 cells for 3D)
+
+	struct Neighbor n ;
+	if(success_flag==0)
+	{
+		n.id = 0.0 ;
+		n.distance = FAILURE_VALUE ;
+	}
+	else
+	{
+		n.id = neighbor_id ;
+		n.distance = min_distance ;
+	}
+	return n;	
+}
+
 
 struct Neighbor NearestNeighborExhaustive(int index, int myChunkStart, int myChunkEnd)
 {
@@ -224,13 +303,15 @@ int main(int argc, char** argv)
 	inFileName = argv[2];
 	numQueryPoints = atoi(argv[3]);
 	queryFileName = argv[4];
-	outFileName = argv[5];
+	outFileName = argv[5] ;
 
         //MPI_File_open(file_comm,inFileName, MPI_MODE_CREATE | MPI_MODE_RDONLY, MPI_INFO_NULL, &fh_input);
 
 	cells = malloc((NX*NY*NZ) * sizeof(struct Cell)) ;
 	allPoints = malloc(numPoints * sizeof(struct Point_3D)) ;
 
+  	myChunkStart = mpi_myrank * numPoints_rank ;
+  	myChunkEnd = (mpi_myrank+1) * numPoints_rank ;
     
         MPI_Init( &argc, &argv);
         MPI_Comm_size(MPI_COMM_WORLD, &mpi_commsize);
@@ -253,7 +334,7 @@ int main(int argc, char** argv)
 
 	readInputFile() ;
 	assignPointsToCells() ;
-	
+
 //	FILE *inFile = fopen(inFileName, "r");
 	FILE *queryFile = fopen(queryFileName, "r");
 	FILE *outFile = fopen(outFileName, "w");
@@ -273,18 +354,21 @@ int main(int argc, char** argv)
   		queryPoints[i] = index;
   	}
 
-
-  	for(int i = 0; i < numQueryPoints; i++) //for every query point (basic version 2 search modes.)
+	int numQueryPoints_rank = numQueryPoints/mpi_commsize ;
+//To-do : Refine the query points
+  	for(int i = mpi_myrank*numQueryPoints_rank ; i < (mpi_myrank+1)*numQueryPoints_rank ; i++) //for every query point (basic version 2 search modes.)
+	//Should this loop over numQueryPoints/mpi_commsize number of points?
   	{
-  		struct Neighbor n = NearestNeighbor(queryPoints[i]);  //to-do 
+  		struct Neighbor n = NearestNeighbor(queryPoints[i]);  
   		float minDistance;
   		minDistance = n.distance;
-  		MPI_Allreduce(&minDistance, &minDistance, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
+  		//MPI_Allreduce(&minDistance, &minDistance, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
 
-  		if(n.distance == (float)FAILURE_VALUE)
+  		/*if(n.distance == (float)FAILURE_VALUE)
   		{
   			struct Neighbor n = NearestNeighborExhaustive(queryPoints[i], myChunkStart, myChunkEnd);
   			minDistance = n.distance;
+			MPI_Barrier(MPI_COMM_WORLD) ;
   			MPI_Allreduce(&minDistance, &minDistance, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
 
   			if(minDistance == n.distance)
@@ -302,7 +386,7 @@ int main(int argc, char** argv)
   					fprintf(outFile , "%d nearest neighbor: %d\n",queryPoints[i], n.id) ;
   				}
   			}
-  		}
+  		}*/
   	}
 
 	if(mpi_myrank == 0)
