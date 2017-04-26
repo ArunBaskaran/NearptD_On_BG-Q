@@ -405,8 +405,8 @@ int main(int argc, char** argv)
    		minDistance = n.distance;
 		printf("Back from nearest neighbor search\n") ;
 		fprintf(outFile , "%d nearest neighbor: %d\n",queryPoints[i], n.id) ;
-		//MPI_Barrier(MPI_COMM_WORLD) ;
-   		//MPI_Allreduce(&minDistance, &minDistance, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
+		MPI_Barrier(MPI_COMM_WORLD) ;
+   		MPI_Allreduce(&minDistance, &minDistance, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
 		//MPI_Barrier(MPI_COMM_WORLD) ;
   		if(n.distance == (float)FAILURE_VALUE)
   		{
