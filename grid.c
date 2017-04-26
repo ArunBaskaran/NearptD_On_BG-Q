@@ -4,14 +4,14 @@
 #include <math.h>
 
 
-#define NX 12
-#define NY 12
-#define NZ 12
-#define dx 0.01
-#define dy 0.01
-#define dz 0.01
+#define NX 128
+#define NY 128
+#define NZ 128
+#define dx 0.001
+#define dy 0.001
+#define dz 0.001
 #define FAILURE_VALUE 0.0
-float queryX, queryY;
+float queryX, queryY, queryZ;
 
 // -----------------------------------Structures-------------------------------------------------------//
 
@@ -55,6 +55,7 @@ int myChunkEnd ;
 int numQueryPoints ;
 int ** point_ids_cells ;
 int points_in_cell[NX * NY * NZ] ;
+struct Point_3D * queryPoints ;
 int no_of_cells ;
 double cell_x_begin,  cell_x_limit , cell_y_limit, cell_z_limit ;
 struct Point_3D * allPoints ;
@@ -67,7 +68,7 @@ MPI_File fh_output ;
 
 char* inFileName ;
 char* queryFileName ;
-char* outFileName ;
+//char* outFileName ;
 
 
 //---------------------------------Global Variables---------------------------------------------------//
@@ -119,7 +120,7 @@ void home_cell(int id)
 		{
 			cells[i].p_ids[points_in_cell[i]] = id ;
 			points_in_cell[i]++ ;
-			printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
+			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
 		}
 	}
 }
@@ -160,7 +161,7 @@ void assignPointsToCells()
   	for(int i = 0 ; i < numPoints ; i++)
   	{
   		if((allPoints[i].x <= cell_x_limit) & (allPoints[i].x > cell_x_begin))    //To DO : Check for points on the borders
-			{printf("point : allPoints[x] = %f and rank is %d\n", allPoints[i].x, mpi_myrank) ; 
+			{//printf("point : allPoints[x] = %f and rank is %d\n", allPoints[i].x, mpi_myrank) ; 
 			 home_cell(i) ; }
 			  
 	}
@@ -173,10 +174,17 @@ void readQueryFile()
 {
 	if (mpi_myrank == 0)
 	{
-		FILE *fp;
-		fp = fopen("input/input.txt","r");
-		fscanf(fp,"%f",&queryX);
-		fscanf(fp,"%f",&queryY);
+		for(int i = 0 ; i<numQueryPoints ; i++)
+		{
+			FILE *fp;
+			fp = fopen("input/input.txt","r");
+			fscanf(fp,"%f",&queryX);
+			fscanf(fp,"%f",&queryY);
+			fscanf(fp,"%f",&queryZ);
+			queryPoints[i].x = queryX ;
+			queryPoints[i].y = queryY ;
+			queryPoints[i].z = queryZ ;			
+		}
 	}
 }
 
@@ -297,7 +305,7 @@ struct Neighbor NearestNeighborExhaustive(int index, int myChunkStart, int myChu
 //2: inputFile.txt
 //3: total # input query points
 //4: queryFile.txt
-//5: outFile.txt
+//5: outFile.txt    //Lets not give outfile 
 int main(int argc, char** argv)
 {
 	Lx = dx * NX ;
@@ -305,18 +313,20 @@ int main(int argc, char** argv)
 	Lz = dz * NZ ;
 	cell_flag = 0 ;
 
-	if(argc < 6)
+	if(argc < 4)
 	{
-		perror("Missing arguments. Exepects 1) inputFile.txt ") ;
+		perror("Missing arguments.") ;
 	}
 	numPoints = atoi(argv[1]);
 	inFileName = argv[2];
 	numQueryPoints = atoi(argv[3]);
 	queryFileName = argv[4];
-	outFileName = argv[5] ;
+	//outFileName = argv[5] ;
 	FILE *inFile = fopen(inFileName, "r");
 	FILE *queryFile = fopen(queryFileName, "r");
-	FILE *outFile = fopen(outFileName, "w");
+	//FILE *outFile = fopen(outFileName, "w");
+
+	char outFileName[80] = { } ;
 
         MPI_Init( &argc, &argv);
         MPI_Comm_size(MPI_COMM_WORLD, &mpi_commsize);
@@ -325,6 +335,7 @@ int main(int argc, char** argv)
 	cells_per_rank = (NX * NY * NZ)/mpi_commsize ;
 	cells = malloc(cells_per_rank * sizeof(struct Cell)) ;
 	allPoints = malloc(numPoints * sizeof(struct Point_3D)) ;
+	queryPoints = malloc(numQueryPoints * sizeof(struct Point_3D)) ;
   	myChunkStart = mpi_myrank * numPoints_rank ;
   	myChunkEnd = (mpi_myrank+1) * numPoints_rank ;
   
@@ -336,15 +347,21 @@ int main(int argc, char** argv)
     		startTime = MPI_Wtime(); //rank 0 is the timekeeper.
         }
   
-	for(i = 0; i < numPoints; i++)
+	numPoints_rank = numPoints/mpi_commsize ;
+	
+	fseek(inFile, mpi_myrank*numPoints_rank*30, SEEK_SET) ;
+
+	for(i = 0; i < numPoints_rank; i++)
  	{
-   		double x,y,z;
-   		fscanf(inFile, "%lf", &x);
-   		fscanf(inFile, "%lf", &y);
-   		fscanf(inFile, "%lf", &z);
+   		float x,y,z;
+   		fscanf(inFile, "%f", &x);
+   		fscanf(inFile, "%f", &y);
+   		fscanf(inFile, "%f", &z);
+		printf(" x, y, and z are %f, %f, and %f. Rank is %d\n", x, y, z, mpi_myrank) ; 
    		allPoints[i].x = x;
    		allPoints[i].y = y;
   		allPoints[i].z = z;
+		//printf("Size of row is %lu\n", sizeof(x)+sizeof(y)+sizeof(z)) ; 
    	}
 
 	MPI_Barrier(MPI_COMM_WORLD) ;
@@ -372,8 +389,13 @@ int main(int argc, char** argv)
 			}
   	}
 	MPI_Barrier(MPI_COMM_WORLD) ;
+	sprintf(outFileName, "output_%d.txt", mpi_myrank);
+	FILE *outFile = fopen(outFileName, "w");
 
 	//-----------------READING THE QUERY POINTS----------------//
+
+
+	//-----------------NEAREST NEIGHBOR FUNCTION----------------//
 
 	for(int i = 0; i < query_rank ; i++) //for every query point (basic version 2 search modes.)
   	{
@@ -412,6 +434,8 @@ int main(int argc, char** argv)
 
 
   	}
+
+	//-----------------NEAREST NEIGHBOR FUNCTION----------------//
 
 	MPI_Barrier(MPI_COMM_WORLD) ;
 
