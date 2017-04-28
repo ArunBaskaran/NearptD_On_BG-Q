@@ -4,14 +4,14 @@
 #include <math.h>
 
 
-#define NX 10
-#define NY 10
-#define NZ 10
+#define NX 12
+#define NY 12
+#define NZ 12
 #define dx 0.01
 #define dy 0.01
 #define dz 0.01
 #define FAILURE_VALUE -1
-float queryX, queryY, queryZ;
+double queryX, queryY, queryZ;
 
 // -----------------------------------Structures-------------------------------------------------------//
 
@@ -43,7 +43,7 @@ struct Neighbor
 //---------------------------------Global Variables---------------------------------------------------//
 
 int i, j, k ;
-int Lx, Ly, Lz ;
+double Lx, Ly, Lz ;
 //int cell_flag ;
 int mpi_myrank;
 int mpi_commsize;
@@ -112,68 +112,109 @@ void home_cell(int id)
 	double z1 = allPoints[id].z ;
 
 //	Reducing the number of iterations that has to be performed
-	
+	if((x1 > 0) & (x1 < Lx/4)) 
+	{
+	for(int i = 0 ; i < cell_max/4 ; i++)
+	{
+		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
+		{
+			cells[i].p_ids[points_in_cell[i]] = id ;
+										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
+			//printf("In index %d\n", i) ;
+			points_in_cell[i]++ ;
+			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
+		}
+	}
+	}
+
+	if((x1 > Lx/4) & (x1 < Lx/2)) 
+	{
+	for(int i = cell_max/4 ; i < 2*cell_max/4 ; i++)
+	{
+		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
+		{
+			cells[i].p_ids[points_in_cell[i]] = id ;
+										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
+			//printf("In index %d\n", i) ;
+			points_in_cell[i]++ ;
+			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
+		}
+	}
+	}
+
+	if((x1 > Lx/2) & (x1 < 3*Lx/4)) 
+	{
+	for(int i = cell_max/2 ; i < 3*cell_max/4 ; i++)
+	{
+		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
+		{
+			cells[i].p_ids[points_in_cell[i]] = id ;
+										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
+			//printf("In index %d\n", i) ;
+			points_in_cell[i]++ ;
+			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
+		}
+	}
+	}
+
+	if((x1 > 3*Lx/4) & (x1 < Lx)) 
+	{
+	for(int i = 3*cell_max/4 ; i < cell_max ; i++)
+	{
+		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
+		{
+			cells[i].p_ids[points_in_cell[i]] = id ;
+										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
+			//printf("In index %d\n", i) ;
+			points_in_cell[i]++ ;
+			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
+		}
+	}
+	}
+
+}
+
+
+/*void home_cell(int id)
+{ 
+	int i ;
+
+	//Reducing the number of iterations that has to be performed
+	double x1 = allPoints[id].x ;
+	double y1 = allPoints[id].y ;
+	double z1 = allPoints[id].z ;
+
+//	Reducing the number of iterations that has to be performed
+
 	for(int i = 0 ; i < cell_max ; i++)
 	{
 		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
 		{
 			cells[i].p_ids[points_in_cell[i]] = id ;
-													//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
+										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
+			//printf("In index %d\n", i) ;
 			points_in_cell[i]++ ;
 			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
 		}
 	}
 
-}
+}*/
+
+
 
 int get_cell(int id)
 {
 	double x1 = queryPoints[id].x ;
 	double y1 = queryPoints[id].y ;
 	double z1 = queryPoints[id].z ;
-	if(x1 <= (NX*dx)/4)
+	for(int i = 0 ; i < cell_max ; i++)
 	{
-		for(int i = 0 ; i < cell_max/4 ; i++)
+		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
 		{
-			if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
-			{
-				return i ;
-			}
+			return i ;
 		}
 	}
 
-	else if((x1 > (NX*dx)/4) & (x1 < (2*NX*dx)/4)) 
-	{
-		for(int i = cell_max/4 ; i < 2*cell_max/4 ; i++)
-		{
-			if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
-			{
-				return i ;
-			}
-		}
-	}
-
-	else if((x1 > (2*NX*dx)/4) & (x1 < (3*NX*dx)/4)) 
-	{
-		for(int i = 2*cell_max/4 ; i < 3*cell_max/4 ; i++)
-		{
-			if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
-			{
-				return i ;
-			}
-		}
-	}
-
-	else if((x1 > (3*NX*dx)/4) & (x1 < (4*NX*dx)/4)) 
-	{
-		for(int i = 3*cell_max/4 ; i < 4*cell_max/4 ; i++)
-		{
-			if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
-			{
-				return i ;
-			}
-		}
-	}
 
 
 }
@@ -194,16 +235,6 @@ void assignPointsToCells()
 //Function to read from query input file. Stores in queryX, queryY
 //Only rank = 0 reads this
 //Input file should be space separated in input/input.txt
-void readQueryFile()
-{
-	if (mpi_myrank == 0)
-	{
-		FILE *fp;
-		fp = fopen("input/input.txt","r");
-		fscanf(fp,"%f",&queryX);
-		fscanf(fp,"%f",&queryY);
-	}
-}
 
 
 double distance(struct Point_3D point1, struct Point_3D point2)
@@ -226,8 +257,8 @@ struct Neighbor NearestNeighbor(int id)
 	int index_new, neighbor_id = 0 ;
 	double temp_distance ;
 	int home_cell_id = get_cell(id) ;
-	printf("Cell id is %d\n", home_cell_id) ;
-	printf("Number of points in cell %d is %d\n", home_cell_id, points_in_cell[home_cell_id]) ;
+	//printf("Cell id is %d\n", home_cell_id) ;
+	//printf("Number of points in cell %d is %d\n", home_cell_id, points_in_cell[home_cell_id]) ;
 	for(int i = -1 ; i<=1 ; i++)
 	{
 		for(int j = -1 ; j <= 1 ; j++)
@@ -235,6 +266,7 @@ struct Neighbor NearestNeighbor(int id)
 			for(int k = -1 ; k <= 1 ; k++)
 			{ 
 				index_new = home_cell_id + i + j*NY + k*(NX*NY) ; 
+				//printf("In index %d\n", index_new) ;
 				if((index_new >= 0) & (index_new < cell_max))
 				{ 
 					int temp = 0;
@@ -244,7 +276,7 @@ struct Neighbor NearestNeighbor(int id)
 						struct Point_3D point1 = queryPoints[id] ;
 						struct Point_3D point2 = allPoints[temp_id] ;
 						temp_distance = sqrt(pow((point2.x-point1.x),2) + pow((point2.y-point1.y),2) + pow((point2.z-point1.z),2)) ;
-						if(temp_distance < min_distance)
+						if((temp_distance < min_distance) && (temp_distance != 0.0))
 						{
 							min_distance = temp_distance ;
 							neighbor_id = cells[index_new].p_ids[temp] ;
@@ -401,6 +433,11 @@ int main(int argc, char** argv)
 	}
 	//--------------Assignment of points to cells----------//
 
+	//for(i = 0 ; i<cell_max ; i++)
+	//{
+	//	printf("points in cell %d is %d\n", i, points_in_cell[i]);
+	//}
+
 	//-----------------READING THE QUERY POINTS----------------//
 
 	for(int i = 0 ; i<numQueryPoints ; i++)
@@ -410,7 +447,8 @@ int main(int argc, char** argv)
 		fscanf(queryFile,"%lf",&queryZ);
 		queryPoints[i].x = queryX ;
 		queryPoints[i].y = queryY ;
-		queryPoints[i].z = queryZ ;			
+		queryPoints[i].z = queryZ ;
+		//printf("querypoint x is %lf\n", queryX) ;			
 	}
 
 	MPI_Barrier(MPI_COMM_WORLD) ;
@@ -420,11 +458,10 @@ int main(int argc, char** argv)
 	for(int i = 0; i < numQueryPoints ; i++) //for every query point (basic version 2 search modes.)
   	{
    		struct Neighbor n = NearestNeighbor(i);
-   		double minDistance;
+   		double minDistance, minDistance1;
 		//printf("In the nearest neighbor search\n") ;
    		minDistance = n.distance;
 		//printf("Back from nearest neighbor search\n") ;
-		fprintf(outFile , "Query point no.%d's nearest neighbor in rank %d: %d\n",i, mpi_myrank, n.id) ;
 		MPI_Barrier(MPI_COMM_WORLD) ;
    		MPI_Allreduce(&minDistance, &minDistance, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
 		//MPI_Barrier(MPI_COMM_WORLD) ;
@@ -451,6 +488,10 @@ int main(int argc, char** argv)
   				}
   			}
   		}
+		else
+		{
+			fprintf(outFile , "Query point no.%d's nearest neighbor : %d and the distance is %lf\n",i, n.id, n.distance) ;
+		}
 
 
   	} 
