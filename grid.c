@@ -498,9 +498,21 @@ int main(int argc, char** argv)
   				}
   			}
   		}
+		else{		
+			if(mpi_myrank==0){
+					
+                    		printf("Min val after exhaustive search is %lf\n",minDistance1);
+                	}
+		}
 
 
   	} 
+	else{		
+		if(mpi_myrank==0){
+					
+                    	printf("Min val after neighbor search is %lf\n",minDistance1);
+                }
+	}
 
 	printf("No. of exhaustive searches done by rank %d : %d \n", mpi_myrank, flag) ;
 
