@@ -43,7 +43,7 @@ struct Neighbor
 //---------------------------------Global Variables---------------------------------------------------//
 
 int i, j, k ;
-double Lx, Ly, Lz ;
+int Lx, Ly, Lz ;
 //int cell_flag ;
 int mpi_myrank;
 int mpi_commsize;
@@ -276,7 +276,7 @@ struct Neighbor NearestNeighbor(int id)
 						struct Point_3D point1 = queryPoints[id] ;
 						struct Point_3D point2 = allPoints[temp_id] ;
 						temp_distance = sqrt(pow((point2.x-point1.x),2) + pow((point2.y-point1.y),2) + pow((point2.z-point1.z),2)) ;
-						if((temp_distance < min_distance) && (temp_distance != 0.0))
+						if(temp_distance < min_distance)
 						{
 							min_distance = temp_distance ;
 							neighbor_id = cells[index_new].p_ids[temp] ;
@@ -383,13 +383,13 @@ int main(int argc, char** argv)
 	sprintf(outFileName, "output_%d.txt", mpi_myrank);
 	FILE *outFile = fopen(outFileName, "w");
   
-        double startTime;
+ /*       double startTime;
         double endTime;
         if(mpi_myrank == 0)
         {
     		startTime = MPI_Wtime(); //rank 0 is the timekeeper.
         }
-
+*/
         cells = malloc(cell_max * sizeof(struct Cell)) ;
         allPoints = malloc(numPoints * sizeof(struct Point_3D)) ;
         queryPoints = malloc(sizeof(struct Point_3D) * numQueryPoints);
@@ -413,7 +413,17 @@ int main(int argc, char** argv)
   		//}
 	}
 
+        double startTime;
+        double endTime;
+        if(mpi_myrank == 0)
+        {
+                startTime = MPI_Wtime(); //rank 0 is the timekeeper.
+        }
+
+
 	//-----------------GRID INITIALIZATION AND POINT ALLOCATION----------------//
+
+	//printf("No of points input by rank %d : %d\n", points_count, mpi_myrank);
 
 	for(i = 0 ; i < cell_max ; i++)
 	{
@@ -433,11 +443,6 @@ int main(int argc, char** argv)
 	}
 	//--------------Assignment of points to cells----------//
 
-	//for(i = 0 ; i<cell_max ; i++)
-	//{
-	//	printf("points in cell %d is %d\n", i, points_in_cell[i]);
-	//}
-
 	//-----------------READING THE QUERY POINTS----------------//
 
 	for(int i = 0 ; i<numQueryPoints ; i++)
@@ -451,28 +456,33 @@ int main(int argc, char** argv)
 		//printf("querypoint x is %lf\n", queryX) ;			
 	}
 
-	MPI_Barrier(MPI_COMM_WORLD) ;
+	//MPI_Barrier(MPI_COMM_WORLD) ;
 
 	//-----------------READING THE QUERY POINTS----------------//
-
+	int flag = 0 ;
 	for(int i = 0; i < numQueryPoints ; i++) //for every query point (basic version 2 search modes.)
   	{
    		struct Neighbor n = NearestNeighbor(i);
-   		double minDistance, minDistance1;
+   		double minDistance;
 		//printf("In the nearest neighbor search\n") ;
    		minDistance = n.distance;
+		printf("minDistance for rank %d : %lf\n", mpi_myrank, n.distance);
+		double minDistance1 ;
 		//printf("Back from nearest neighbor search\n") ;
-		MPI_Barrier(MPI_COMM_WORLD) ;
-   		MPI_Allreduce(&minDistance, &minDistance, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+		fprintf(outFile , "Query point no.%d's nearest neighbor : %d and the distance is %lf\n",i, n.id, n.distance) ;
+	//	MPI_Barrier(MPI_COMM_WORLD) ;
+   		MPI_Allreduce(&minDistance, &minDistance1, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
 		//MPI_Barrier(MPI_COMM_WORLD) ;
-  		if(minDistance == 100000.0)
+		//int flag =0 ;
+  		if(minDistance1 == 100000.0)
   		{
+			flag++ ;
   			struct Neighbor n1 = NearestNeighborExhaustive(i);
 	   		minDistance = n1.distance;
-			MPI_Barrier(MPI_COMM_WORLD) ;
-	   		MPI_Allreduce(&minDistance, &minDistance, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+	//		MPI_Barrier(MPI_COMM_WORLD) ;
+	   		MPI_Allreduce(&minDistance, &minDistance1, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
   			//minDistance = n.distance;
-  			if(minDistance == n1.distance)
+  			if(minDistance1 == n1.distance)
   			{
   				//TODO we need some kind of locking for ties.
   				if(n1.id == FAILURE_VALUE)
@@ -488,13 +498,11 @@ int main(int argc, char** argv)
   				}
   			}
   		}
-		else
-		{
-			fprintf(outFile , "Query point no.%d's nearest neighbor : %d and the distance is %lf\n",i, n.id, n.distance) ;
-		}
 
 
   	} 
+
+	printf("No. of exhaustive searches done by rank %d : %d \n", mpi_myrank, flag) ;
 
 	MPI_Barrier(MPI_COMM_WORLD) ;
 
