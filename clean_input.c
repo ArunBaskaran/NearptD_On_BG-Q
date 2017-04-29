@@ -16,10 +16,14 @@ void roundIOvalues(char* fname){
 
 	float f;
 	int count = 0;
+	int lines = 0;
 	while (!feof(fp_input)){
 		fscanf(fp_input, "%f", &f);
 		if (count == 2){
+					printf("%d\n",lines);
+
 			count = 0;
+			lines++;
 			fprintf(fp_output, "%.6lf%s", fabs(f), "\n"); 
 			continue;
 		}
