@@ -4,9 +4,9 @@
 #include <math.h>
 
 
-#define NX 12
-#define NY 12
-#define NZ 12
+#define NX 10
+#define NY 10
+#define NZ 10
 #define dx 0.01
 #define dy 0.01
 #define dz 0.01
@@ -43,7 +43,7 @@ struct Neighbor
 //---------------------------------Global Variables---------------------------------------------------//
 
 int i, j, k ;
-int Lx, Ly, Lz ;
+double Lx, Ly, Lz ;
 //int cell_flag ;
 int mpi_myrank;
 int mpi_commsize;
@@ -102,7 +102,7 @@ void grid_init()
 }
 
 
-void home_cell(int id)
+/*void home_cell(int id)
 { 
 	int i ;
 
@@ -110,10 +110,11 @@ void home_cell(int id)
 	double x1 = allPoints[id].x ;
 	double y1 = allPoints[id].y ;
 	double z1 = allPoints[id].z ;
-
+	//printf("Inside home_cell\n") ;
+	//printf("x1 is %lf\n", x1) ;
 //	Reducing the number of iterations that has to be performed
-	if((x1 > 0) & (x1 < Lx/4)) 
-	{
+	if((x1 > 0) && (x1 < Lx/4)) 
+	{ printf("Inside first if\n") ;
 	for(int i = 0 ; i < cell_max/4 ; i++)
 	{
 		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
@@ -122,13 +123,13 @@ void home_cell(int id)
 										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
 			//printf("In index %d\n", i) ;
 			points_in_cell[i]++ ;
-			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
+			printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
 		}
 	}
 	}
 
-	if((x1 > Lx/4) & (x1 < Lx/2)) 
-	{
+	if((x1 > Lx/4) && (x1 < Lx/2)) 
+	{ printf("Inside second if\n") ;
 	for(int i = cell_max/4 ; i < 2*cell_max/4 ; i++)
 	{
 		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
@@ -137,13 +138,13 @@ void home_cell(int id)
 										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
 			//printf("In index %d\n", i) ;
 			points_in_cell[i]++ ;
-			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
+			printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
 		}
 	}
 	}
 
-	if((x1 > Lx/2) & (x1 < 3*Lx/4)) 
-	{
+	if((x1 > Lx/2) && (x1 < 3*Lx/4)) 
+	{ printf("Inside third if\n") ;
 	for(int i = cell_max/2 ; i < 3*cell_max/4 ; i++)
 	{
 		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
@@ -152,30 +153,30 @@ void home_cell(int id)
 										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
 			//printf("In index %d\n", i) ;
 			points_in_cell[i]++ ;
-			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
+			printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
 		}
 	}
 	}
 
-	if((x1 > 3*Lx/4) & (x1 < Lx)) 
-	{
+	if((x1 > 3*Lx/4) && (x1 < Lx)) 
+	{ printf("Inside fourth if\n") ;
 	for(int i = 3*cell_max/4 ; i < cell_max ; i++)
-	{
-		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
+	{	//printf("cell_id is %d\n", i) ;
+		if((x1 >= cells[i].xbegin) && (x1 < cells[i].xend) && (y1>=cells[i].ybegin) && (y1<cells[i].yend) && (z1>=cells[i].zbegin) && (z1<cells[i].zend))
 		{
 			cells[i].p_ids[points_in_cell[i]] = id ;
-										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
+			printf("Got a match\n") ;							//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
 			//printf("In index %d\n", i) ;
 			points_in_cell[i]++ ;
-			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
+			printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
 		}
 	}
 	}
 
-}
+}*/
 
 
-/*void home_cell(int id)
+void home_cell(int id)
 { 
 	int i ;
 
@@ -198,7 +199,7 @@ void home_cell(int id)
 		}
 	}
 
-}*/
+}
 
 
 
@@ -276,7 +277,7 @@ struct Neighbor NearestNeighbor(int id)
 						struct Point_3D point1 = queryPoints[id] ;
 						struct Point_3D point2 = allPoints[temp_id] ;
 						temp_distance = sqrt(pow((point2.x-point1.x),2) + pow((point2.y-point1.y),2) + pow((point2.z-point1.z),2)) ;
-						if(temp_distance < min_distance)
+						if((temp_distance < min_distance) & (temp_distance > 0.0))
 						{
 							min_distance = temp_distance ;
 							neighbor_id = cells[index_new].p_ids[temp] ;
@@ -380,8 +381,10 @@ int main(int argc, char** argv)
 
  	int points_count = 0 ;
 	int query_rank = 0 ;
+	if(mpi_myrank==0)
+	{
 	sprintf(outFileName, "output_%d.txt", mpi_myrank);
-	FILE *outFile = fopen(outFileName, "w");
+	}
   
  /*       double startTime;
         double endTime;
@@ -412,6 +415,22 @@ int main(int argc, char** argv)
 			points_count++ ;
   		//}
 	}
+
+        for(int i = 0 ; i<numQueryPoints ; i++)
+        {
+                fscanf(queryFile,"%lf",&queryX);
+                fscanf(queryFile,"%lf",&queryY);
+                fscanf(queryFile,"%lf",&queryZ);
+                queryPoints[i].x = queryX ;
+                queryPoints[i].y = queryY ;
+                queryPoints[i].z = queryZ ;
+                //printf("querypoint x is %lf\n", queryX) ;                     
+                //        }
+                //
+	}
+
+        MPI_Barrier(MPI_COMM_WORLD) ;
+
 
         double startTime;
         double endTime;
@@ -445,7 +464,7 @@ int main(int argc, char** argv)
 
 	//-----------------READING THE QUERY POINTS----------------//
 
-	for(int i = 0 ; i<numQueryPoints ; i++)
+	/*for(int i = 0 ; i<numQueryPoints ; i++)
 	{
 		fscanf(queryFile,"%lf",&queryX);
 		fscanf(queryFile,"%lf",&queryY);
@@ -454,7 +473,7 @@ int main(int argc, char** argv)
 		queryPoints[i].y = queryY ;
 		queryPoints[i].z = queryZ ;
 		//printf("querypoint x is %lf\n", queryX) ;			
-	}
+	}*/
 
 	//MPI_Barrier(MPI_COMM_WORLD) ;
 
@@ -466,10 +485,10 @@ int main(int argc, char** argv)
    		double minDistance;
 		//printf("In the nearest neighbor search\n") ;
    		minDistance = n.distance;
-		printf("minDistance for rank %d : %lf\n", mpi_myrank, n.distance);
+	//	printf("minDistance for rank %d : %lf\n", mpi_myrank, n.distance);
 		double minDistance1 ;
 		//printf("Back from nearest neighbor search\n") ;
-		fprintf(outFile , "Query point no.%d's nearest neighbor : %d and the distance is %lf\n",i, n.id, n.distance) ;
+		//fprintf(outFile , "Query point no.%d's nearest neighbor : %d and the distance is %lf\n",i, n.id, n.distance) ;
 	//	MPI_Barrier(MPI_COMM_WORLD) ;
    		MPI_Allreduce(&minDistance, &minDistance1, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
 		//MPI_Barrier(MPI_COMM_WORLD) ;
@@ -480,9 +499,16 @@ int main(int argc, char** argv)
   			struct Neighbor n1 = NearestNeighborExhaustive(i);
 	   		minDistance = n1.distance;
 	//		MPI_Barrier(MPI_COMM_WORLD) ;
-	   		MPI_Allreduce(&minDistance, &minDistance1, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+	   		//MPI_Allreduce(&minDistance, &minDistance1, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+			MPI_Reduce(&minDistance, &minDistance1, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
   			//minDistance = n.distance;
-  			if(minDistance1 == n1.distance)
+			if(mpi_myrank==0)
+			{
+				FILE *outFile = fopen(outFileName, "a");
+ 				fprintf(outFile , "Query point no.%d's nearest neighbor: %d\n",i, n.id) ;
+				fclose(outFile) ;
+			}
+  			/*if(minDistance1 == n1.distance)
   			{
   				//TODO we need some kind of locking for ties.
   				if(n1.id == FAILURE_VALUE)
@@ -496,13 +522,22 @@ int main(int argc, char** argv)
   				{
   					fprintf(outFile , "Query point no.%d's nearest neighbor: %d\n",i, n.id) ;
   				}
-  			}
+  			}*/
   		}
+		else
+		{
+			if(mpi_myrank==0)
+			{
+				FILE *outFile = fopen(outFileName, "a");
+ 				fprintf(outFile , "Query point no.%d's nearest neighbor: %d\n",i, n.id) ;
+				fclose(outFile) ;
+			}
+		}
 
 
   	} 
 
-	printf("No. of exhaustive searches done by rank %d : %d \n", mpi_myrank, flag) ;
+	//printf("No. of exhaustive searches done by rank %d : %d \n", mpi_myrank, flag) ;
 
 	MPI_Barrier(MPI_COMM_WORLD) ;
 
@@ -513,9 +548,12 @@ int main(int argc, char** argv)
     		printf("Total elapsed time was %lf\n", totalTime);
         } 
 
-//	fclose(inFile) ;
-//	fclose(queryFile) ;
+	fclose(inFile) ;
+	fclose(queryFile) ;
+	//if(mpi_myrank==0)
+	//{
 //	fclose(outFile) ;
+	//}
 
 	free(cells) ;
 	free(allPoints) ;
