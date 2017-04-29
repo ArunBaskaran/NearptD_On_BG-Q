@@ -102,103 +102,101 @@ void grid_init()
 }
 
 
+// void home_cell(int id)
+// { 
+// 	int i ;
+
+// 	//Reducing the number of iterations that has to be performed
+// 	double x1 = allPoints[id].x ;
+// 	double y1 = allPoints[id].y ;
+// 	double z1 = allPoints[id].z ;
+// 	printf("putting %lf, %lf, %lf in ", x1,y1,z1);
+// //	Reducing the number of iterations that has to be performed
+// 	if((x1 > 0) & (x1 < Lx/4)) 
+// 	{
+// 	for(int i = 0 ; i < cell_max/4 ; i++)
+// 	{
+// 		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
+// 		{
+// 			printf(" cell %d\n",i);
+// 			cells[i].p_ids[points_in_cell[i]] = id ;
+// 										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
+// 			//printf("In index %d\n", i) ;
+// 			points_in_cell[i]++ ;
+// 			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
+// 		}
+// 	}
+// 	}
+
+// 	if((x1 > Lx/4) & (x1 < Lx/2)) 
+// 	{
+// 	for(int i = cell_max/4 ; i < 2*cell_max/4 ; i++)
+// 	{
+// 		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
+// 		{
+// 			printf(" cell %d\n",i);
+// 			cells[i].p_ids[points_in_cell[i]] = id ;
+// 										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
+// 			//printf("In index %d\n", i) ;
+// 			points_in_cell[i]++ ;
+// 			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
+// 		}
+// 	}
+// 	}
+
+// 	if((x1 > Lx/2) & (x1 < 3*Lx/4)) 
+// 	{
+// 	for(int i = cell_max/2 ; i < 3*cell_max/4 ; i++)
+// 	{
+// 		if((x1 >= cells[i].xbegin) && (x1 <= cells[i].xend) && (y1>=cells[i].ybegin) && (y1<cells[i].yend) && (z1>=cells[i].zbegin) & (z1<cells[i].zend))
+// 		{
+// 			printf(" cell %d\n",i);
+// 			cells[i].p_ids[points_in_cell[i]] = id ;
+// 										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
+// 			//printf("In index %d\n", i) ;
+// 			points_in_cell[i]++ ;
+// 			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
+// 		}
+// 	}
+// 	}
+
+// 	if((x1 > 3*Lx/4) & (x1 < Lx)) 
+// 	{
+// 	for(int i = 3*cell_max/4 ; i < cell_max ; i++)
+// 	{
+// 		if((x1 >= cells[i].xbegin) && (x1 <= cells[i].xend) && (y1>=cells[i].ybegin) & (y1<cells[i].yend) && (z1>=cells[i].zbegin) && (z1<cells[i].zend))
+// 		{
+// 			printf(" cell %d\n",i);
+
+// 			cells[i].p_ids[points_in_cell[i]] = id ;
+// 										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
+// 			//printf("In index %d\n", i) ;
+// 			points_in_cell[i]++ ;
+// 			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
+// 		}
+// 	}
+// 	}
+
+// }
+
+
 void home_cell(int id)
 { 
 	int i ;
 
-	//Reducing the number of iterations that has to be performed
-	double x1 = allPoints[id].x ;
+	double x1 = allPoints[id].x ; //get the coordinates of the point
 	double y1 = allPoints[id].y ;
 	double z1 = allPoints[id].z ;
 
-//	Reducing the number of iterations that has to be performed
-	if((x1 > 0) & (x1 < Lx/4)) 
-	{
-	for(int i = 0 ; i < cell_max/4 ; i++)
-	{
-		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
-		{
-			cells[i].p_ids[points_in_cell[i]] = id ;
-										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
-			//printf("In index %d\n", i) ;
-			points_in_cell[i]++ ;
-			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
-		}
-	}
-	}
+	int xGrid = x1/dx; //scale them into grid space.
+	int yGrid = y1/dy;
+	int zGrid = z1/dz;
 
-	if((x1 > Lx/4) & (x1 < Lx/2)) 
-	{
-	for(int i = cell_max/4 ; i < 2*cell_max/4 ; i++)
-	{
-		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
-		{
-			cells[i].p_ids[points_in_cell[i]] = id ;
-										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
-			//printf("In index %d\n", i) ;
-			points_in_cell[i]++ ;
-			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
-		}
-	}
-	}
+	int index_new = xGrid + yGrid*NY + zGrid*(NX*NY) ; //map them into 1D space.
 
-	if((x1 > Lx/2) & (x1 < 3*Lx/4)) 
-	{
-	for(int i = cell_max/2 ; i < 3*cell_max/4 ; i++)
-	{
-		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
-		{
-			cells[i].p_ids[points_in_cell[i]] = id ;
-										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
-			//printf("In index %d\n", i) ;
-			points_in_cell[i]++ ;
-			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
-		}
-	}
-	}
-
-	if((x1 > 3*Lx/4) & (x1 < Lx)) 
-	{
-	for(int i = 3*cell_max/4 ; i < cell_max ; i++)
-	{
-		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
-		{
-			cells[i].p_ids[points_in_cell[i]] = id ;
-										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
-			//printf("In index %d\n", i) ;
-			points_in_cell[i]++ ;
-			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
-		}
-	}
-	}
-
+	cells[index_new].p_ids[points_in_cell[index_new]] = id ; //update
+	points_in_cell[index_new]++ ;
 }
-
-
-/*void home_cell(int id)
-{ 
-	int i ;
-
-	//Reducing the number of iterations that has to be performed
-	double x1 = allPoints[id].x ;
-	double y1 = allPoints[id].y ;
-	double z1 = allPoints[id].z ;
-
-//	Reducing the number of iterations that has to be performed
-
-	for(int i = 0 ; i < cell_max ; i++)
-	{
-		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
-		{
-			cells[i].p_ids[points_in_cell[i]] = id ;
-										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
-			//printf("In index %d\n", i) ;
-			points_in_cell[i]++ ;
-			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
-		}
-	}
-
-}*/
 
 
 
@@ -270,13 +268,15 @@ struct Neighbor NearestNeighbor(int id)
 				if((index_new >= 0) & (index_new < cell_max))
 				{ 
 					int temp = 0;
+					// printf("examining %d %d %dwhich holds %d values\n", 
+					// 	, points_in_cell[index_new]);
 					while(temp < points_in_cell[index_new])
 					{					  
 						int temp_id = cells[index_new].p_ids[temp] ;
 						struct Point_3D point1 = queryPoints[id] ;
 						struct Point_3D point2 = allPoints[temp_id] ;
 						temp_distance = sqrt(pow((point2.x-point1.x),2) + pow((point2.y-point1.y),2) + pow((point2.z-point1.z),2)) ;
-						if(temp_distance < min_distance)
+						if(temp_distance < min_distance && temp_id != id)
 						{
 							min_distance = temp_distance ;
 							neighbor_id = cells[index_new].p_ids[temp] ;
@@ -408,6 +408,7 @@ int main(int argc, char** argv)
    			allPoints[points_count].x = x;
    			allPoints[points_count].y = y;
   			allPoints[points_count].z = z;
+  			printf("Just read in %lf, %lf, %lf\n",allPoints[points_count].x,allPoints[points_count].y,allPoints[points_count].z);
 			//home_cell(points_count) ;
 			points_count++ ;
   		//}
