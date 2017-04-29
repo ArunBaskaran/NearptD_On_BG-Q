@@ -1,6 +1,7 @@
 //Specify file name in main
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 void roundIOvalues(char* fname){
 	FILE* fp_input;
@@ -19,10 +20,10 @@ void roundIOvalues(char* fname){
 		fscanf(fp_input, "%f", &f);
 		if (count == 2){
 			count = 0;
-			fprintf(fp_output, "%.8lf%s", f, "\n"); 
+			fprintf(fp_output, "%.6lf%s", fabs(f), "\n"); 
 			continue;
 		}
-		fprintf(fp_output,"%.8lf%s", f, " ");
+		fprintf(fp_output,"%.6lf%s", fabs(f), " ");
 		count ++;
 	}
 

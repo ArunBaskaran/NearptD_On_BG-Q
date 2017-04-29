@@ -4,9 +4,9 @@
 #include <math.h>
 
 
-#define NX 10
-#define NY 10
-#define NZ 10
+#define NX 12
+#define NY 12
+#define NZ 12
 #define dx 0.01
 #define dy 0.01
 #define dz 0.01
@@ -176,7 +176,7 @@ void grid_init()
 }*/
 
 
-void home_cell(int id)
+/*void home_cell(int id)
 { 
 	int i ;
 
@@ -198,6 +198,25 @@ void home_cell(int id)
 			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
 		}
 	}
+
+}*/
+
+void home_cell(int id)
+{ 
+	int i ;
+
+	double x1 = allPoints[id].x ; //get the coordinates of the point
+	double y1 = allPoints[id].y ;
+	double z1 = allPoints[id].z ;
+
+	int xGrid = x1/dx; //scale them into grid space.
+	int yGrid = y1/dy;
+	int zGrid = z1/dz;
+
+	int index_new = xGrid*NY*NZ + yGrid*NZ + zGrid ; //map them into 1D space.
+	//printf("index_new is %d\n", index_new) ;
+	cells[index_new].p_ids[points_in_cell[index_new]] = id ; //update
+	points_in_cell[index_new]++ ;
 
 }
 
@@ -458,6 +477,7 @@ int main(int argc, char** argv)
 	//--------------Assignment of points to cells----------//
 	for(i = 0 ; i < points_count ; i++)
 	{
+		//printf("points count is points_count\n") ;
 		home_cell(i) ;
 	}
 	//--------------Assignment of points to cells----------//
@@ -502,13 +522,13 @@ int main(int argc, char** argv)
 	   		//MPI_Allreduce(&minDistance, &minDistance1, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
 			MPI_Reduce(&minDistance, &minDistance1, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
   			//minDistance = n.distance;
-			if(mpi_myrank==0)
+			/*if(mpi_myrank==0)
 			{
 				FILE *outFile = fopen(outFileName, "a");
  				fprintf(outFile , "Query point no.%d's nearest neighbor: %d\n",i, n.id) ;
 				fclose(outFile) ;
 			}
-  			/*if(minDistance1 == n1.distance)
+  			if(minDistance1 == n1.distance)
   			{
   				//TODO we need some kind of locking for ties.
   				if(n1.id == FAILURE_VALUE)
@@ -524,15 +544,15 @@ int main(int argc, char** argv)
   				}
   			}*/
   		}
-		else
+		/*else
 		{
 			if(mpi_myrank==0)
 			{
 				FILE *outFile = fopen(outFileName, "a");
- 				fprintf(outFile , "Query point no.%d's nearest neighbor: %d\n",i, n.id) ;
+ 				//fprintf(outFile , "Query point no.%d's nearest neighbor: %d\n",i, n.id) ;
 				fclose(outFile) ;
 			}
-		}
+		}*/
 
 
   	} 
