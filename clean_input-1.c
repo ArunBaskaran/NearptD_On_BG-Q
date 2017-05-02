@@ -4,15 +4,20 @@
 #include<stdlib.h>
 #include <math.h>
 #include <time.h>
+#include<mpi.h>
+
 
 //#define RAND_MAX 32767
 
-int main()
+int main(int argc, char** argv)
 {
 	FILE* fp_input;
 	FILE* fp_output;
-
-
+	int mpi_commsize;
+	int mpi_myrank;
+	MPI_Init( &argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_commsize);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_myrank);
 	srand(time(NULL));
 	//fp_input = fopen(fname,"r");
 	char outname[15];
@@ -23,12 +28,12 @@ int main()
 
 	//float f;
 	int count = 0;
-	int i ;
+	long i ;
 	double f ;
 	f = (double)rand()/(double)RAND_MAX ;
 	f = f/10 ;
 	printf(" f is %lf\n", f) ;
-	for(i = 0 ; i < 10000000*3 ; i++)
+	for(i = 0 ; i < 1000000000l*3 ; i++)
 	{
 		//fscanf(fp_input, "%f", &f);
 		f = (double)rand()/(double)RAND_MAX ;
@@ -43,6 +48,7 @@ int main()
 	}
 
 	fclose(fp_output) ;
+  	MPI_Finalize();
 
 }
 

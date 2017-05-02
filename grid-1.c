@@ -1,3 +1,7 @@
+//The following is an embarassingly parallel version of a nearest neighbor search. It is auxilary to our main project, so it is not as well doccumented.
+//The important thing to note is that this function works the same as grid.c in every way except for that each rank processes the entire universe.
+//Instead, work is broken over the number of query points. Therefore, this implmentation can be seen as doing the sequential case in parallel.
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<mpi.h>
@@ -102,106 +106,6 @@ void grid_init()
 		}
 	}
 }
-
-
-/*void home_cell(int id)
-{ 
-	int i ;
-
-	//Reducing the number of iterations that has to be performed
-	double x1 = allPoints[id].x ;
-	double y1 = allPoints[id].y ;
-	double z1 = allPoints[id].z ;
-	//printf("Inside home_cell\n") ;
-	//printf("x1 is %lf\n", x1) ;
-//	Reducing the number of iterations that has to be performed
-	if((x1 > 0) && (x1 < Lx/4)) 
-	{ printf("Inside first if\n") ;
-	for(int i = 0 ; i < cell_max/4 ; i++)
-	{
-		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
-		{
-			cells[i].p_ids[points_in_cell[i]] = id ;
-										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
-			//printf("In index %d\n", i) ;
-			points_in_cell[i]++ ;
-			printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
-		}
-	}
-	}
-
-	if((x1 > Lx/4) && (x1 < Lx/2)) 
-	{ printf("Inside second if\n") ;
-	for(int i = cell_max/4 ; i < 2*cell_max/4 ; i++)
-	{
-		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
-		{
-			cells[i].p_ids[points_in_cell[i]] = id ;
-										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
-			//printf("In index %d\n", i) ;
-			points_in_cell[i]++ ;
-			printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
-		}
-	}
-	}
-
-	if((x1 > Lx/2) && (x1 < 3*Lx/4)) 
-	{ printf("Inside third if\n") ;
-	for(int i = cell_max/2 ; i < 3*cell_max/4 ; i++)
-	{
-		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
-		{
-			cells[i].p_ids[points_in_cell[i]] = id ;
-										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
-			//printf("In index %d\n", i) ;
-			points_in_cell[i]++ ;
-			printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
-		}
-	}
-	}
-
-	if((x1 > 3*Lx/4) && (x1 < Lx)) 
-	{ printf("Inside fourth if\n") ;
-	for(int i = 3*cell_max/4 ; i < cell_max ; i++)
-	{	//printf("cell_id is %d\n", i) ;
-		if((x1 >= cells[i].xbegin) && (x1 < cells[i].xend) && (y1>=cells[i].ybegin) && (y1<cells[i].yend) && (z1>=cells[i].zbegin) && (z1<cells[i].zend))
-		{
-			cells[i].p_ids[points_in_cell[i]] = id ;
-			printf("Got a match\n") ;							//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
-			//printf("In index %d\n", i) ;
-			points_in_cell[i]++ ;
-			printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
-		}
-	}
-	}
-
-}*/
-
-
-/*void home_cell(int id)
-{ 
-	int i ;
-
-	//Reducing the number of iterations that has to be performed
-	double x1 = allPoints[id].x ;
-	double y1 = allPoints[id].y ;
-	double z1 = allPoints[id].z ;
-
-//	Reducing the number of iterations that has to be performed
-
-	for(int i = 0 ; i < cell_max ; i++)
-	{
-		if((x1 >= cells[i].xbegin) & (x1 <= cells[i].xend) & (y1>=cells[i].ybegin) & (y1<cells[i].yend) & (z1>=cells[i].zbegin) & (z1<cells[i].zend))
-		{
-			cells[i].p_ids[points_in_cell[i]] = id ;
-										//cells[i].p_ids = realloc(cells[i].p_ids, 1**sizeof(int)) ;
-			//printf("In index %d\n", i) ;
-			points_in_cell[i]++ ;
-			//printf("points in cell %d is %d\n", i,  points_in_cell[i]) ;
-		}
-	}
-
-}*/
 
 void home_cell(int id)
 { 
@@ -494,79 +398,18 @@ int main(int argc, char** argv)
 	}
 	//--------------Assignment of points to cells----------//
 
-	//-----------------READING THE QUERY POINTS----------------//
-
-	/*for(int i = 0 ; i<numQueryPoints ; i++)
-	{
-		fscanf(queryFile,"%lf",&queryX);
-		fscanf(queryFile,"%lf",&queryY);
-		fscanf(queryFile,"%lf",&queryZ);
-		queryPoints[i].x = queryX ;
-		queryPoints[i].y = queryY ;
-		queryPoints[i].z = queryZ ;
-		//printf("querypoint x is %lf\n", queryX) ;			
-	}*/
-
-	//MPI_Barrier(MPI_COMM_WORLD) ;
-
-	//-----------------READING THE QUERY POINTS----------------//
 	int flag = 0 ;
 	for(int i = 0; i < numQueryPoints_rank ; i++) //for every query point (basic version 2 search modes.)
   	{
    		struct Neighbor n = NearestNeighbor(i);
    		double minDistance;
-		//printf("In the nearest neighbor search\n") ;
    		minDistance = n.distance;
-	//	printf("minDistance for rank %d : %lf\n", mpi_myrank, n.distance);
-		//double minDistance1 ;
-		//printf("Back from nearest neighbor search\n") ;
-		//fprintf(outFile , "Query point no.%d's nearest neighbor : %d and the distance is %lf\n",i, n.id, n.distance) ;
-	//	MPI_Barrier(MPI_COMM_WORLD) ;
-   		//MPI_Allreduce(&minDistance, &minDistance1, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-		//MPI_Barrier(MPI_COMM_WORLD) ;
-		//int flag =0 ;
   		if(minDistance == 100000.0)
   		{
 			flag++ ;
   			struct Neighbor n1 = NearestNeighborExhaustive(i);
 	   		minDistance = n1.distance;
-	//		MPI_Barrier(MPI_COMM_WORLD) ;
-	   		//MPI_Allreduce(&minDistance, &minDistance1, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-			//MPI_Reduce(&minDistance, &minDistance1, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-  			//minDistance = n.distance;
-			/*if(mpi_myrank==0)
-			{
-				FILE *outFile = fopen(outFileName, "a");
- 				fprintf(outFile , "Query point no.%d's nearest neighbor: %d\n",i, n.id) ;
-				fclose(outFile) ;
-			}*/
-  			/*if(minDistance1 == n1.distance)
-  			{
-  				//TODO we need some kind of locking for ties.
-  				if(n1.id == FAILURE_VALUE)
-  				{
-  					if(mpi_myrank == 0)
-  					{
-  						fprintf(outFile , "Query point no.%d's nearest neighbor: Nonexistent\n", i);
-  					}
-  				}
-  				else
-  				{
-  					fprintf(outFile , "Query point no.%d's nearest neighbor: %d\n",i, n.id) ;
-  				}
-  			}*/
   		}
-		/*else
-		{
-			if(mpi_myrank==0)
-			{
-				FILE *outFile = fopen(outFileName, "a");
- 				fprintf(outFile , "Query point no.%d's nearest neighbor: %d and the distance is %lf\n",i, n.id, minDistance) ;
-				fclose(outFile) ;
-			}
-		}*/
-
-
   	} 
 
 	//printf("No. of exhaustive searches done by rank %d : %d \n", mpi_myrank, flag) ;
@@ -574,18 +417,11 @@ int main(int argc, char** argv)
 	MPI_Barrier(MPI_COMM_WORLD) ;
 
 	if(mpi_myrank == 0)
-        {
-    		endTime = MPI_Wtime();
-    		double totalTime = endTime-startTime;
-    		printf("Total elapsed time was %lf\n", totalTime);
-        } 
-
-//	fclose(inFile) ;
-//	fclose(queryFile) ;
-	//if(mpi_myrank==0)
-	//{
-//	fclose(outFile) ;
-	//}
+    {
+		endTime = MPI_Wtime();
+		double totalTime = endTime-startTime;
+		printf("Total elapsed time was %lf\n", totalTime);
+    } 
 
 	free(cells) ;
 	free(allPoints) ;
