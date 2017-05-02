@@ -18,7 +18,7 @@
 double queryX, queryY, queryZ;
 
 // -----------------------------------Structures-------------------------------------------------------//
-
+//structure to define a cell
 struct Cell
 {
 	double xbegin, xend, ybegin, yend, zbegin, zend ;
@@ -26,12 +26,12 @@ struct Cell
 	int p_flag ; // An iterative variable that will give the number of points in the cell 
 } ;
 
-
+//structure to hold the 3d points
 struct Point_3D
 {
 	double x, y, z ;
 } ;
-
+//structure to hold the distance and id of the neighbor
 struct Neighbor
 {
 	double distance;
@@ -81,7 +81,7 @@ char* queryFileName ;
 
 
 //----------------------------- Functions -----------------------------------------------------------//
-
+//This funtion is used to initialize the grid
 void grid_init()
 {
 	int flag = 0 ; 
@@ -107,6 +107,7 @@ void grid_init()
 	}
 }
 
+//This function is used to identify the cell the point is in, using id
 void home_cell(int id)
 { 
 	int i ;
@@ -146,7 +147,7 @@ int get_cell(int id)
 
 }
 
-
+//This function helps in determining number of points a particular cell should hold based on mpiranks
 void assignPointsToCells()
 {
   	myChunkStart = mpi_myrank * numPoints_rank ;
@@ -163,7 +164,7 @@ void assignPointsToCells()
 //Only rank = 0 reads this
 //Input file should be space separated in input/input.txt
 
-
+//Function to calculate distance between 3d points
 double distance(struct Point_3D point1, struct Point_3D point2)
 {
 
@@ -176,7 +177,7 @@ double distance(struct Point_3D point1, struct Point_3D point2)
 }
 
 
-
+//This function implements nearest neighbor algorithm
 struct Neighbor NearestNeighbor(int id)
 {
 	double min_distance = 100000.0 ;
@@ -239,7 +240,8 @@ struct Neighbor NearestNeighbor(int id)
 
 }
 
-
+//If nearest neighbor algorithm failed to determine the neighbor then this funtion is used.
+// This function carries out an exhaustive search to find the nearest neighbor
 struct Neighbor NearestNeighborExhaustive(int index)
 {
 	double distance_final = 100000.0;
@@ -278,7 +280,7 @@ struct Neighbor NearestNeighborExhaustive(int index)
 //2: inputFile.txt
 //3: total # input query points
 //4: queryFile.txt
-//5: outFile.txt    //Lets not give outfile 
+
 int main(int argc, char** argv)
 {
 	if(argc < 4)
