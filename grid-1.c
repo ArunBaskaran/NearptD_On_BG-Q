@@ -129,7 +129,7 @@ void home_cell(int id)
 }
 
 
-
+//Given an id, retrieves the proper cell in grid space.
 int get_cell(int id)
 {
 	double x1 = queryPoints[id].x ;
